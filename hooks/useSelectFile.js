@@ -6,7 +6,6 @@ export default function useSelectFile() {
   function onSelectFile(e) {
     const reader = new FileReader();
     if (e.target.files?.[0]) {
-      console.log(e.target.files[0]);
       reader.readAsDataURL(e.target.files[0]);
     }
 

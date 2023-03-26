@@ -20,12 +20,12 @@ import { useRouter } from 'next/router';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { RiCakeLine, RiErrorWarningLine } from 'react-icons/ri';
 import { FaReddit } from 'react-icons/fa';
-import { auth, db } from '../../firebase/firebase.config';
+import { auth, db, storage } from '../../firebase/firebase.config';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useRef, useState } from 'react';
 import useSelectFile from '../../hooks/useSelectFile';
-import { getDownloadURL, ref, uploadString, storage } from 'firebase/storage';
-import { updateDoc } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadString } from 'firebase/storage';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useSetRecoilState } from 'recoil';
 import { communityState } from '../../atoms/communitiesAtom';
 
@@ -45,8 +45,7 @@ export default function About({ communityData }) {
       const imageRef = ref(storage, `communities/${communityData.id}/image`);
       await uploadString(imageRef, selectedFile, 'data_url');
       const downloadURL = await getDownloadURL(imageRef);
-      const docRef = doc(db, 'communities', communityData.id);
-      await updateDoc(docRef, {
+      await updateDoc(doc(db, 'communities', communityData.id), {
         imageURL: downloadURL,
       });
       setCommunityStateValue((prev) => {
@@ -59,7 +58,7 @@ export default function About({ communityData }) {
         };
       });
     } catch (error) {
-      console.log('updateImageError', error.message);
+      console.log('updateImageError', error);
       setError(true);
     }
     setFileUploading(false);

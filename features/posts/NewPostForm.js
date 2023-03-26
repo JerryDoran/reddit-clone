@@ -85,6 +85,7 @@ export default function NewPostForm({ user }) {
 
       // check for selected file
       if (selectedFile) {
+        console.log('selectedFile', selectedFile);
         // store image file in fb storage => getDownloadURL (returns imageURL)
         const imageRef = ref(storage, `posts/${postDocRef.id}/image`);
         await uploadString(imageRef, selectedFile, 'data_url');
