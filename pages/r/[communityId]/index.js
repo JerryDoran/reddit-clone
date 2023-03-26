@@ -35,7 +35,7 @@ export default function CommunityPage({ communityData }) {
           <Posts communityData={communityData} />
         </>
         <>
-          <About />
+          <About communityData={communityData} />
         </>
       </PageContent>
     </>

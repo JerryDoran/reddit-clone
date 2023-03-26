@@ -23,6 +23,7 @@ import {
 } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadString } from 'firebase/storage';
 import { db, storage } from '../../firebase/firebase.config';
+import useSelectFile from '../../hooks/useSelectFile';
 
 const formTabs = [
   {
@@ -53,7 +54,7 @@ export default function NewPostForm({ user }) {
     title: '',
     body: '',
   });
-  const [selectedFile, setSelectedFile] = useState('');
+  const { selectedFile, setSelectedFile, onSelectFile } = useSelectFile();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
@@ -104,20 +105,6 @@ export default function NewPostForm({ user }) {
     setLoading(false);
   }
 
-  function onSelectImage(e) {
-    const reader = new FileReader();
-    if (e.target.files?.[0]) {
-      console.log(e.target.files[0]);
-      reader.readAsDataURL(e.target.files[0]);
-    }
-
-    reader.onload = (readerEvent) => {
-      if (readerEvent.target?.result) {
-        setSelectedFile(readerEvent.target?.result);
-      }
-    };
-  }
-
   function onTextChange(e) {
     const { name, value } = e.target;
     setTextInputs((prevState) => {
@@ -151,7 +138,7 @@ export default function NewPostForm({ user }) {
         )}
         {selectedTab === 'Images & Video' && (
           <ImageUpload
-            onSelectImage={onSelectImage}
+            onSelectImage={onSelectFile}
             selectedFile={selectedFile}
             setSelectedTab={setSelectedTab}
             setSelectedFile={setSelectedFile}

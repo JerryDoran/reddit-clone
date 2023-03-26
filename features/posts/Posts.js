@@ -63,7 +63,7 @@ export default function Posts({ communityData }) {
             <PostItem
               key={post.id}
               post={post}
-              userIsCreator={user[0].uid === post.creatorId}
+              userIsCreator={user[0]?.uid === post.creatorId}
               userVoteValue={undefined}
               onVote={onVote}
               onSelectPost={onSelectPost}
