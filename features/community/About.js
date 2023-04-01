@@ -16,7 +16,6 @@ import {
 } from '@chakra-ui/react';
 import moment from 'moment';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 import { HiOutlineDotsHorizontal } from 'react-icons/hi';
 import { RiCakeLine, RiErrorWarningLine } from 'react-icons/ri';
 import { FaReddit } from 'react-icons/fa';
@@ -32,7 +31,6 @@ import { communityState } from '../../atoms/communitiesAtom';
 export default function About({ communityData }) {
   const [fileUploading, setFileUploading] = useState(false);
   const [error, setError] = useState(false);
-  const router = useRouter();
   const [user] = useAuthState(auth);
   const selectedFileRef = useRef();
   const { selectedFile, setSelectedFile, onSelectFile } = useSelectFile();
@@ -108,7 +106,7 @@ export default function About({ communityData }) {
               </Text>
             )}
           </Flex>
-          <Link href={`/r/${router.query.communityId}/submit`}>
+          <Link href={`/r/${communityData.id}/submit`}>
             <Button mt={3} height='30px' width='100%'>
               Create Post
             </Button>

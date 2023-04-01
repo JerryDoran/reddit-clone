@@ -48,6 +48,8 @@ export async function getServerSideProps(context) {
     const communityDocRef = doc(db, 'communities', context.query.communityId);
     const communityDoc = await getDoc(communityDocRef);
 
+    console.log(communityDoc);
+
     return {
       props: {
         communityData: communityDoc.exists()
