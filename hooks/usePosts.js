@@ -1,16 +1,34 @@
 import { deleteObject, ref } from 'firebase/storage';
-import { collection, deleteDoc, doc, writeBatch } from 'firebase/firestore';
-import { useRecoilState } from 'recoil';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import { communityState } from '../atoms/communitiesAtom';
 import { postState } from '../atoms/postsAtom';
 import { auth, db, storage } from '../firebase/firebase.config';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { useEffect } from 'react';
+import { authModalState } from '../atoms/authModalAtom';
 
 export default function usePosts() {
   const [postStateValue, setPostStateValue] = useRecoilState(postState);
   const [user] = useAuthState(auth);
+  const { currentCommunity } = useRecoilValue(communityState);
+  const setAuthModalState = useSetRecoilState(authModalState);
 
   async function onVote(post, vote, communityId) {
     // check for a user => if not, open auth modal
+    if (!user?.uid) {
+      setAuthModalState({ open: true, view: 'login' });
+      return;
+    }
     try {
       const { voteStatus } = post;
       const existingVote = postStateValue.postVotes.find(
@@ -127,6 +145,42 @@ export default function usePosts() {
       return false;
     }
   }
+
+  async function getCommunityPostVotes(communityId) {
+    const colRef = collection(db, 'users', `${user?.uid}/postVotes`);
+    const postVotesQuery = query(
+      colRef,
+      where('communityId', '==', communityId)
+    );
+
+    const postVoteDocs = await getDocs(postVotesQuery);
+    const postVotes = postVoteDocs.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    setPostStateValue((prev) => {
+      return {
+        ...prev,
+        postVotes: postVotes,
+      };
+    });
+  }
+
+  useEffect(() => {
+    if (!user || !currentCommunity?.id) return;
+    getCommunityPostVotes(currentCommunity?.id);
+  }, [user, currentCommunity]);
+
+  useEffect(() => {
+    // clear user post votes
+    if (!user) {
+      setPostStateValue((prev) => ({
+        ...prev,
+        postVotes: [],
+      }));
+    }
+  }, [user]);
 
   return {
     postStateValue,

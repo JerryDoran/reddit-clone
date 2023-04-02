@@ -22,12 +22,9 @@ import { communityState } from '../../../atoms/communitiesAtom';
 
 export default function UserMenu({ user }) {
   const setAuthModalState = useSetRecoilState(authModalState);
-  const resetCommunityState = useResetRecoilState(communityState);
 
   async function logout() {
     await signOut(auth);
-    // clear community state
-    resetCommunityState();
   }
 
   return (
