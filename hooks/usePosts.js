@@ -3,6 +3,7 @@ import { collection, deleteDoc, doc, writeBatch } from 'firebase/firestore';
 import { useRecoilState } from 'recoil';
 import { postState } from '../atoms/postsAtom';
 import { auth, db, storage } from '../firebase/firebase.config';
+import { useAuthState } from 'react-firebase-hooks/auth';
 
 export default function usePosts() {
   const [postStateValue, setPostStateValue] = useRecoilState(postState);
@@ -41,14 +42,60 @@ export default function usePosts() {
         updatedPost.voteStatus = voteStatus + vote;
         updatedPostVotes = [...updatedPostVotes, newVote];
       } else {
-        if (removingVote) {
+        const postVoteRef = doc(
+          db,
+          'users',
+          `${user.uid}/postVotes/${existingVote.id}`
+        );
+        if (existingVote.voteValue === vote) {
           // user could remove their vote (upvote => neutral OR downvote => neutral)
+          updatedPost.voteStatus = voteStatus - vote;
+          updatedPostVotes = updatedPostVotes.filter(
+            (vote) => vote.id !== existingVote.id
+          );
           // delete the postVote document
+          batch.delete(postVoteRef);
+
+          voteChange *= -1;
         } else {
           // user flipping vote (up => down OR down => up) add/subtract 2 to/from post.voteStatus
+          updatedPost.voteStatus = voteStatus + 2 * vote;
+
+          const voteIndex = postStateValue.postVotes.findIndex(
+            (vote) => vote.id === existingVote.id
+          );
+
+          updatedPostVotes[voteIndex] = {
+            ...existingVote,
+            voteValue: vote,
+          };
           // update existing postVote document
+          batch.update(postVoteRef, {
+            voteValue: vote,
+          });
+          voteChange = 2 * vote;
         }
       }
+
+      // update post document
+
+      const postRef = doc(db, 'posts', post.id);
+      batch.update(postRef, { voteStatus: voteStatus + voteChange });
+
+      await batch.commit();
+
+      // update state with updated values
+      const postIndex = postStateValue.posts.findIndex(
+        (item) => item.id === post.id
+      );
+      updatedPosts[postIndex] = updatedPost;
+      setPostStateValue((prev) => {
+        return {
+          ...prev,
+          posts: updatedPosts,
+          postVotes: updatedPostVotes,
+        };
+      });
     } catch (error) {
       console.log('onVote error', error);
     }
