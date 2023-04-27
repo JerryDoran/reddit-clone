@@ -16,25 +16,28 @@ import { auth, db, storage } from '../firebase/firebase.config';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useEffect } from 'react';
 import { authModalState } from '../atoms/authModalAtom';
+import { useRouter } from 'next/router';
 
 export default function usePosts() {
   const [postStateValue, setPostStateValue] = useRecoilState(postState);
   const [user] = useAuthState(auth);
   const { currentCommunity } = useRecoilValue(communityState);
   const setAuthModalState = useSetRecoilState(authModalState);
+  const router = useRouter();
 
-  async function onVote(post, vote, communityId) {
+  async function onVote(e, post, vote, communityId) {
+    e.stopPropagation()
     // check for a user => if not, open auth modal
     if (!user?.uid) {
       setAuthModalState({ open: true, view: 'login' });
       return;
     }
-    try {
-      const { voteStatus } = post;
-      const existingVote = postStateValue.postVotes.find(
-        (vote) => vote.postId === post.id
-      );
+    const { voteStatus } = post;
+    const existingVote = postStateValue.postVotes.find(
+      (vote) => vote.postId === post.id
+    );
 
+    try {
       const batch = writeBatch(db);
       const updatedPost = { ...post };
       const updatedPosts = [...postStateValue.posts];
@@ -67,16 +70,16 @@ export default function usePosts() {
         );
         if (existingVote.voteValue === vote) {
           // user could remove their vote (upvote => neutral OR downvote => neutral)
+          voteChange *= -1;
           updatedPost.voteStatus = voteStatus - vote;
           updatedPostVotes = updatedPostVotes.filter(
             (vote) => vote.id !== existingVote.id
           );
           // delete the postVote document
           batch.delete(postVoteRef);
-
-          voteChange *= -1;
         } else {
           // user flipping vote (up => down OR down => up) add/subtract 2 to/from post.voteStatus
+          voteChange = 2 * vote;
           updatedPost.voteStatus = voteStatus + 2 * vote;
 
           const voteIndex = postStateValue.postVotes.findIndex(
@@ -91,7 +94,6 @@ export default function usePosts() {
           batch.update(postVoteRef, {
             voteValue: vote,
           });
-          voteChange = 2 * vote;
         }
       }
 
@@ -107,6 +109,7 @@ export default function usePosts() {
         (item) => item.id === post.id
       );
       updatedPosts[postIndex] = updatedPost;
+
       setPostStateValue((prev) => {
         return {
           ...prev,
@@ -114,12 +117,25 @@ export default function usePosts() {
           postVotes: updatedPostVotes,
         };
       });
+
+      if (postStateValue.selectedPost) {
+        setPostStateValue((prev) => ({
+          ...prev,
+          selectedPost: updatedPost,
+        }));
+      }
     } catch (error) {
       console.log('onVote error', error);
     }
   }
 
-  function onSelectPost() {}
+  function onSelectPost(post) {
+    setPostStateValue((prev) => ({
+      ...prev,
+      selectedPost: post,
+    }));
+    router.push(`/r/${post.communityId}/comments/${post.id}`);
+  }
 
   async function onDeletePost(post) {
     try {

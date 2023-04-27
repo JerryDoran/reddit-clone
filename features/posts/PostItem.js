@@ -21,6 +21,7 @@ import {
   IoBookmarkOutline,
 } from 'react-icons/io5';
 import { useToast } from '@chakra-ui/react';
+import { useRouter } from 'next/router';
 
 export default function PostItem({
   post,
@@ -30,14 +31,19 @@ export default function PostItem({
   onDeletePost,
   onSelectPost,
 }) {
-  console.log('userVoteValue', userVoteValue);
+  const router = useRouter();
   const [loadingImage, setLoadingImage] = useState(true);
   const [error, setError] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
+  // this line detects whether or not we are on a single post page.  If the onSelectPost is undefined(falsy)
+  // then we are on the single post page
+  const singlePostPage = !onSelectPost;
+
   const toast = useToast();
 
-  async function handleDelete() {
+  async function handleDelete(e) {
+    e.stopPropagation();
     setLoadingDelete(true);
     try {
       const success = await onDeletePost(post);
@@ -53,6 +59,9 @@ export default function PostItem({
         duration: 3000,
         isClosable: true,
       });
+      if (singlePostPage) {
+        router.push(`/r/${post.communityId}`);
+      }
     } catch (error) {
       setError(error.message);
       toast({
@@ -70,19 +79,19 @@ export default function PostItem({
     <Flex
       border='1px solid'
       bg='white'
-      borderColor='gray.300'
-      borderRadius={4}
-      _hover={{ borderColor: 'gray.500' }}
-      cursor='pointer'
-      onClick={onSelectPost}
+      borderColor={singlePostPage ? 'white' : 'gray.300'}
+      borderRadius={singlePostPage ? '4px 4px 0px 0px' : '4px'}
+      _hover={{ borderColor: singlePostPage ? 'none' : 'gray.500' }}
+      cursor={singlePostPage ? 'unset' : 'pointer'}
+      onClick={() => onSelectPost && onSelectPost(post)}
     >
       <Flex
         flexDirection='column'
         alignItems='center'
-        bg='gray.100'
+        bg={singlePostPage ? 'none' : 'gray.100'}
         p={2}
         width='40px'
-        borderRadius={4}
+        borderRadius={singlePostPage ? '0' : '3px 0px 0px 3px'}
       >
         <Icon
           as={
@@ -90,10 +99,10 @@ export default function PostItem({
           }
           color={userVoteValue === 1 ? 'brand.100' : 'gray.400'}
           fontSize={22}
-          onClick={() => onVote(post, 1, post.communityId)}
+          onClick={(e) => onVote(e, post, 1, post.communityId)}
           cursor='pointer'
         />
-        <Text fontSize='9pt'>{post.voteStatus}</Text>
+        <Text fontSize='9pt'>{post?.voteStatus}</Text>
         <Icon
           as={
             userVoteValue === -1
@@ -102,7 +111,7 @@ export default function PostItem({
           }
           color={userVoteValue === -1 ? '#4379ff' : 'gray.400'}
           fontSize={22}
-          onClick={() => onVote(post, -1, post.communityId)}
+          onClick={(e) => onVote(e, post, -1, post.communityId)}
           cursor='pointer'
         />
       </Flex>
@@ -116,15 +125,15 @@ export default function PostItem({
           >
             {/* Home page check */}
             <Text>
-              Posted by u/{post.creatorDisplayName}{' '}
-              {moment(new Date(post.createdAt?.seconds * 1000)).fromNow()}
+              Posted by u/{post?.creatorDisplayName}{' '}
+              {moment(new Date(post?.createdAt?.seconds * 1000)).fromNow()}
             </Text>
           </Stack>
           <Text fontSize='12pt' fontWeight={600}>
-            {post.title}
+            {post?.title}
           </Text>
-          <Text fontSize='10pt'>{post.body}</Text>
-          {post.imageURL && (
+          <Text fontSize='10pt'>{post?.body}</Text>
+          {post?.imageURL && (
             <Flex justifyContent='center' alignItems='center' padding={2}>
               {loadingImage && (
                 <Skeleton height='200px' width='100%' borderRadius={4} />
@@ -148,7 +157,7 @@ export default function PostItem({
             cursor='pointer'
           >
             <Icon as={BsChat} mr={2} />
-            <Text fontSize='9pt'>{post.numberOfComments}</Text>
+            <Text fontSize='9pt'>{post?.numberOfComments}</Text>
           </Flex>
           <Flex
             alignItems='center'
