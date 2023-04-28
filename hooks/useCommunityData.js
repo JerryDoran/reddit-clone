@@ -6,11 +6,13 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   increment,
   writeBatch,
 } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 
 export default function useCommunityData() {
   const [user] = useAuthState(auth);
@@ -19,6 +21,7 @@ export default function useCommunityData() {
   const setAuthModalState = useSetRecoilState(authModalState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  const router = useRouter();
 
   function onJoinOrLeaveCommunity(communityData, isJoined) {
     // Is user signed in?  if not => open auth model
@@ -132,6 +135,22 @@ export default function useCommunityData() {
     setLoading(false);
   }
 
+  async function getCommunityData(communityId) {
+    try {
+      const communityDocRef = doc(db, 'communities', communityId);
+      const communityDoc = await getDoc(communityDocRef);
+      setCommunityStateValue((prev) => ({
+        ...prev,
+        currentCommunity: {
+          id: communityDoc.id,
+          ...communityDoc.data(),
+        },
+      }));
+    } catch (error) {
+      console.log('getCommunityData:', error);
+    }
+  }
+
   useEffect(() => {
     if (!user) {
       setCommunityStateValue((prev) => ({
@@ -142,6 +161,14 @@ export default function useCommunityData() {
     }
     getMySnippets();
   }, [user]);
+
+  useEffect(() => {
+    const { communityId } = router.query;
+
+    if (communityId && !communityStateValue.currentCommunity) {
+      getCommunityData(communityId);
+    }
+  }, [router.query, communityStateValue.currentCommunity]);
 
   return { communityStateValue, onJoinOrLeaveCommunity, loading };
 }

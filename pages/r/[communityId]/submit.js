@@ -5,10 +5,13 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../../firebase/firebase.config';
 import { useRecoilValue } from 'recoil';
 import { communityState } from '../../../atoms/communitiesAtom';
+import useCommunityData from '../../../hooks/useCommunityData';
+import About from '../../../features/community/About';
 
 export default function Submit() {
   const [user] = useAuthState(auth);
-  const communityStateValue = useRecoilValue(communityState);
+  // const communityStateValue = useRecoilValue(communityState);
+  const { communityStateValue } = useCommunityData();
   console.log('communityStateValue', communityStateValue);
   return (
     <PageContent>
@@ -18,7 +21,11 @@ export default function Submit() {
         </Box>
         <NewPostForm user={user} />
       </>
-      <></>
+      <>
+        {communityStateValue.currentCommunity && (
+          <About communityData={communityStateValue.currentCommunity} />
+        )}
+      </>
     </PageContent>
   );
 }

@@ -26,7 +26,7 @@ export default function usePosts() {
   const router = useRouter();
 
   async function onVote(e, post, vote, communityId) {
-    e.stopPropagation()
+    e.stopPropagation();
     // check for a user => if not, open auth modal
     if (!user?.uid) {
       setAuthModalState({ open: true, view: 'login' });
